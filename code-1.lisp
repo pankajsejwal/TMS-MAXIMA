@@ -1191,7 +1191,7 @@ Corporation is advised of the possibility of such damages.
 
 (proclaim '(special *JTRE*))
 
-(defvar *queen-rules-file* "/home/pmce/Project Space/BPS/jtms/jqrule.lisp")
+(defvar *queen-rules-file* "jqrule.lisp")
 ;  #+ILS "/u/bps/code/jtms/jqrule.rbin"
 ;  #+PARC "virgo:/virgo/dekleer/bps/code/jtms/jqrule.lisp"
 ;  #+MCL "Macintosh HD:BPS:jtms:jqrule.fasl")
@@ -1657,8 +1657,8 @@ Corporation is advised of the possibility of such damages.
 
 ;;;; User entry point
 
-(defvar *jsaint-rules*  "/home/pmce/Project Space/BPS/jtms/jsrules.lisp")
-(defvar *jsaint-operators*  "/home/pmce/Project Space/BPS/jtms/jsops.lisp")
+(defvar *jsaint-rules*  "jsrules.lisp")
+(defvar *jsaint-operators*  "jsops.lisp")
 
 
 (defun solve-integral (integral
