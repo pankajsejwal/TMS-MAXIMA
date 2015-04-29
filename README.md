@@ -11,72 +11,14 @@ If you start maxima in the project directory this is fine.  If you start maxima 
     file_search_maxima:append( [sconcat("/home/joker/Project Space/BPS/jtms/###.{mac,mc}")] , file_search_maxima)$
     file_search_lisp:append( [sconcat("/home/joker/Project Space/BPS/jtms/###.{lisp}")] , file_search_lisp)$
 
-To use the code, for example
+To use the code, for example try
 
-  load("code-1.lisp");
-  differentiate(x+x*y+x*z,x); => z+y+1
+    load("code-1.lisp");
+    differentiate(x+x*y+x*z,x); 
+
+Followed by
   
-  explainresult();  =>
-  
-   Solved the problem:
-Differentiate(Derivative(x*z+x*y+x,x))
-z+y+1
-=>
-Differentiate(Derivative(x,x))
-1
-Differentiate(Derivative(x*y,x))
-y
-Differentiate(Derivative(x*z,x))
-z
-
-
-
- showaograph();    //shows and-or graph created during finding solution to the problem
- 
- LEVEL=0
-Differentiate(Derivative(x*z+x*y+x,x))
-    SOLUTION=  
-z+y+1
-    
-    Or subgoals:    
-[Derivative(x*z+x*y+x,x)]
-   LEVEL=1
-Derivative(x*z+x*y+x,x)
-    Solved in following steps
-      LEVEL=2
-Differentiate(Derivative(x*y,x))
-    SOLUTION=  
-y
-    
-    Or subgoals:    
-[Derivative(x*y,x)]
-      LEVEL=2
-Differentiate(Derivative(x*z,x))
-    SOLUTION=  
-z
-    
-    Or subgoals:    
-[Derivative(x*z,x)]
-         LEVEL=3
-Derivative(x*y,x)
-    Solved in following steps
-         LEVEL=3
-Derivative(x*z,x)
-    Solved in following steps
-            LEVEL=4
-Differentiate(Derivative(x*z,x))
-    SOLUTION=  
-z
-    
-    Or subgoals:    
-[Derivative(x*z,x)]
-               LEVEL=5
-Derivative(x*z,x)
-    Solved in following steps
-                  LEVEL=6
-Differentiate(Derivative(x,x))
-    SOLUTION=  
-1
+    explainresult();
 
 This code is under development.  Some examples give wrong results or no results (denoted as FAILED) because all rules have not been put in to differentiate all types of expressions. Also, I have tried to format it but 'display' starts everything from a new line and it really breaks the format.
 
