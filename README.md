@@ -7,9 +7,9 @@ I have made changes to program to make it suitable for differentiation and integ
 
 If you start maxima in the project directory this is fine.  If you start maxima outside the project directory you will need to add the path to the project to Maxima's internal paths as follows.
 
-  /* Add the project location to Maxima's search path */
-  file_search_maxima:append( [sconcat("/home/joker/Project Space/BPS/jtms/###.{mac,mc}")] , file_search_maxima)$
-  file_search_lisp:append( [sconcat("/home/joker/Project Space/BPS/jtms/###.{lisp}")] , file_search_lisp)$
+    /* Add the project location to Maxima's search path */
+    file_search_maxima:append( [sconcat("/home/joker/Project Space/BPS/jtms/###.{mac,mc}")] , file_search_maxima)$
+    file_search_lisp:append( [sconcat("/home/joker/Project Space/BPS/jtms/###.{lisp}")] , file_search_lisp)$
 
 To use the code, for example
 
