@@ -4,11 +4,17 @@ Maxima compatible TMS code for step by step computation
 I have been trying to learn about Truth Maintenance Systems and there are good explanations in "Building problem solvers". There is information available for all kinds of TMS. They have recreated SAINT integration program using TMS and they have also shown steps involved in reaching to logical conclusions from start to finish of the solution.
 
 I have made changes to program to make it suitable for differentiation and integrated it into maxima and it is working fine for some set of rules that I have put in.
-example,
+Note:
+(defvar *jsaint-rules*  "/home/joker/Project Space/BPS/jtms/jsrules.lisp")
+(defvar *jsaint-operators*  "/home/joker/Project Space/BPS/jtms/jsops.lisp")
+Download jsrules.lisp and jsops.lisp and replace into code-1.lisp with their paths.
+
+Example,
 
   differentiate(x+x*y+x*z,x); => z+y+1
   
-  explainresult();
+  explainresult();  =>
+  
    Solved the problem:
 Differentiate(Derivative(x*z+x*y+x,x))
 z+y+1
