@@ -16,6 +16,9 @@ liability, even if Kenneth D. Forbus, Johan de Kleer or Xerox
 Corporation is advised of the possibility of such damages.
 |#
 
+|# This software has been worked upon to make it work for step-by-step
+differentiation, in case of queries, please mail to pankajsejwal@gmail.com |#
+
 ;;; Justification-based Truth Maintenence System (JTMS)
 
 ;(in-package :COMMON-LISP-USER)
@@ -318,11 +321,11 @@ Corporation is advised of the possibility of such damages.
   (cond ((eq justification :ENABLED-ASSUMPTION)
 	 (format t "~%~A is an enabled assumption"
 		 (node-string node)))
-	(justification (mapcar #'displa (cons (replac-to-maxima (cadr (node-string node))) 
-				(replac-to-maxima (cddr (node-string node))))) (princ '=>) 
+	(justification (cons (replac-to-maxima (cadr (node-string node))) 
+				(replac-to-maxima (cddr (node-string node)))) (princ '=>) 
 	 (dolist (anode (just-antecedents justification))
-	    (progn (terpri)(mapcar #'displa (cons (replac-to-maxima (cadr (node-string anode))) 
-				(replac-to-maxima (cddr (node-string anode))))))
+	    (progn (terpri)(cons (replac-to-maxima (cadr (node-string anode))) 
+				(replac-to-maxima (cddr (node-string anode)))))
 				))
 	(T (format t "~%~A is OUT." (node-string node))))
   node)
@@ -467,7 +470,7 @@ Corporation is advised of the possibility of such damages.
         ((member form '(quit stop exit abort)) nil)
         (format t "~%~A" (eval form))
         (run-rules)
-        (format t "~%>>")))
+        (format t "~%>>")))  
 
 (defun show (&optional (*JTRE* *JTRE*) (stream *standard-output*))
   (show-data *JTRE* stream) (show-rules *JTRE* stream))
@@ -714,12 +717,12 @@ Corporation is advised of the possibility of such damages.
 (defun show-datum (datum)
   (format nil "~A" (datum-lisp-form datum)))
 
-(defun get-datum (num &optional (*JTRE* *JTRE*))
+(defun get-tms-datum  (num &optional (*JTRE* *JTRE*))
   (map-dbclass
    #'(lambda (dbclass)
        (dolist (datum (dbclass-facts dbclass))
 	       (when (= (datum-id datum) num)
-		     (return-from GET-DATUM datum))))))
+		     (return-from get-tms-datum  datum))))))
 
 (defun get-just (num &optional (*JTRE* *JTRE*))
   (dolist (just (jtms-justs (jtre-jtms *JTRE*)))
@@ -754,11 +757,11 @@ Corporation is advised of the possibility of such damages.
 
 ;;;; Building and installing rules
 
-(defmacro rule (triggers &rest body) (do-rule triggers body))
+(defmacro rule (triggers &rest body)  (do-rule triggers body))
 
-(defun my-rule(triggers &rest body)(do-rule triggers body))
+;(defun my-rule(triggers &rest body)(do-rule triggers body))
 
-(defun do-rule (triggers body)
+(defun do-rule (triggers body) 
   (let ((*rule-procedures* nil)
 	(*bound-vars* nil)
 	(index-form nil))
@@ -768,6 +771,7 @@ Corporation is advised of the possibility of such damages.
 			     'rule
 			     (make-nested-rule
 			      (cdr triggers) body))))
+	;(print index-form)
   `(progn ,@ *rule-procedures* ,index-form)))
 
 (defmacro internal-rule (triggers &rest body)
@@ -1178,71 +1182,7 @@ Corporation is advised of the possibility of such damages.
 			  (format t "~% Reference or JTMS failure.")))
 		:OKAY)
 	  (print (eval form))))
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; -*-jqueens.lisp;
-
-;;;; Example of dependency-directed search using JTRE
-
-;(in-package :COMMON-LISP-USER)
-
-;;; Statistics
-(defvar *n-assumptions* 0)
-(defvar *placements* nil)
-
-(proclaim '(special *JTRE*))
-
-(defvar *queen-rules-file* "jqrule.lisp")
-;  #+ILS "/u/bps/code/jtms/jqrule.rbin"
-;  #+PARC "virgo:/virgo/dekleer/bps/code/jtms/jqrule.lisp"
-;  #+MCL "Macintosh HD:BPS:jtms:jqrule.fasl")
-
-(defun test-queens (from to)
-  (do ((n from (1+ n)))
-      ((> n to))
-      (gc)
-      (time (n-queens n))
-      (format t "~% For n=~D, ~D solutions, ~D assumptions."
-	     n (length *placements*) *n-assumptions*)))
-
-(defun n-queens (n &optional (debugging? nil))
-  (setup-queens-puzzle n debugging?)
-  (solve-queens-puzzle (make-queens-choice-sets n))
-  (length *placements*))
-
-;;;; Setup and search
-
-(defun setup-queens-puzzle (n &optional (debugging? nil))
-  (in-JTRE (create-jtre (format nil "~D-Queens JTRE" n) 
-			:DEBUGGING debugging?))
-  (setq *placements* nil
-	*n-assumptions* 0)
-  (load *queen-rules-file*))
-
-(defun make-queens-choice-sets (n)
-  (do ((column 1 (1+ column))
-       (column-queens nil nil)
-       (choice-sets nil))
-      ((> column n) (nreverse choice-sets))
-    (dotimes (row n)
-     (push `(Queen ,column ,(1+ row)) column-queens))
-    (push (nreverse column-queens) choice-sets)))
-
-(defun solve-queens-puzzle (choice-sets)
-  (cond ((null choice-sets) (gather-queens-solution))
-	(t (dolist (choice (car choice-sets))
-	    (unless (in? `(not ,choice) *jtre*)
-	     ;respect nogood information
-     (multiple-value-bind (nogood? asns)
-      (try-in-context choice
-       `(solve-queens-puzzle ',(cdr choice-sets))
-       *jtre*)
-      (incf *n-assumptions*)
-      (when nogood?
-	    ;;This assumption lost, so justify the negation
-	    ;; based on the other relevant assumptions.
-	    (assert! `(not ,choice)
-		     `(Nogood ,@ 
-			      (remove choice asns))))))))))
+	  
 
 ;;;; JTMS approximation to try-in-context
 
@@ -1285,24 +1225,7 @@ Corporation is advised of the possibility of such damages.
 	(retract! asn marker)
 	(throw 'TRY-CONTRADICTION-FOUND (cons :ASNS asns))))))
 
-;;; Other helpers
-
-(defun queens-okay? (x1 y1 x2 y2)
-  (not (or (= y1 y2) (= (abs (- x1 x2)) (abs (- y1 y2))))))
-
-(defun gather-queens-solution ()
-  (push (remove-if #'(lambda (q) (out? q *jtre*))
-		   (fetch `(Queen ?c ?r) *jtre*))
-	*placements*))
-
-(defun show-queens-solution (solution &aux n)
-  (setq n (length solution))
-  (dotimes (i n)
-    (terpri)
-    (dotimes (j n)
-      (format t "~A"
-	      (if (member `(queen ,i ,j) solution
-			  :TEST #'equal) "Q" "-")))))
+			  
 ;;++++++++++++++++++++++++++++++++==
 ;; -*- Mode: Lisp; -*-
 
@@ -1314,10 +1237,12 @@ Corporation is advised of the possibility of such damages.
 
 (defvar *simplify-cache* (make-hash-table :TEST #'equal))
 
-(defun simplify (exp)
+#| (defun simplify-demo(exp)   
   (or (gethash exp *simplify-cache*)
       (setf (gethash exp *simplify-cache*) 
-	    (simplify-it exp *algebra-rules*))))
+	    (simplify-it exp *algebra-rules*))))    |#  
+	    
+(defun simplify-demo (exp) exp) 
 
 (defun clear-simplify-cache ()
   (clrhash *simplify-cache*))
@@ -1325,7 +1250,7 @@ Corporation is advised of the possibility of such damages.
 (defun simplify-it (exp rules &aux result)
   (setq result
 	(try-matcher-rules
-	 (if (listp exp) (mapcar #'simplify exp)
+	 (if (listp exp) (mapcar #'simplify-demoexp)
 	   exp)
 	 rules))
   (if (equal result exp) result
@@ -1794,61 +1719,11 @@ Corporation is advised of the possibility of such damages.
 
 ;;;; Defining operators
 
-(defun delete-me (name trigger &rest keyed-items
-			  &aux subproblems result test) (print `(trigger-> ,trigger))
-  (setq subproblems (cadr (member :SUBPROBLEMS keyed-items)))(print `(subproblems-> ,subproblems))
-  (setq result (cadr (member :RESULT keyed-items)))(print `(result-> ,result))
-  (setq test (cadr (member :TEST keyed-items)))(print `(test-> ,test)))
-
-(defmacro defIntegration (name trigger &rest keyed-items
-			  &aux subproblems result test) ;(print `(trigger-> ,trigger))
-  (setq subproblems (cadr (member :SUBPROBLEMS keyed-items)));(print `(subproblems-> ,subproblems))
-  (setq result (cadr (member :RESULT keyed-items)));(print `(result-> ,result))
-  (setq test (cadr (member :TEST keyed-items)));(print `(test-> ,test))
-  (unless result 
-    (error "Integration operator must have result form"))
-  `(rule ((:IN (expanded (Integrate ,trigger)) :VAR ?starter
-	  ,@ (if test `(:TEST ,test) nil)))
-	 (rlet ((?integral ,trigger)
-		(?problem (Integrate ,trigger)))
-	       (rlet ((?op-instance (,name ?integral)))
-	     (rassert! (Operator-Instance ?op-instance)
-		       :OP-INSTANCE-DEFINITION)
-	     ;; If no subproblems, just create solution
-     ,@ (cond ((null subproblems)
-	       `((rlet ((?solution
-			 (:EVAL (simplify ,(quotize result)))))
-		  (rassert! (solution-of ?problem ?solution)
-		   (,(keywordize name)
-		     (Operator-Instance ?op-instance))))))
-	      (t ;; Usual case
-	       (let ((subs (calculate-subproblem-list subproblems))) 
-		 `((rassert! (suggest-for ?problem ?op-instance)
-		    (:INTOPEXPANDER ?starter))
-   (rule ((:IN (expanded (try ?op-instance)) :VAR ?try))
-	   (rlet ,subs
-		 ,@ (mapcar #'(lambda (sub)
-				`(queue-problem ,(car sub) ?problem))
-			    subs)
-		 (rassert! (AND-SUBGOALS (try ?op-instance)
-					 ,(mapcar #'car subs))
-			   (,(keywordize (format nil "~A-DEF" name))
-			    ?try))
-		 ;; Solution detector
-		 ,(multiple-value-bind (triggers antes)
-		      (calculate-solution-rule-parts subs subproblems)
-		    `(rule (,@ triggers)
-			   (rlet ((?solution
-				    (:EVAL (simplify ,(quotize result)))))
-				 (rassert! (solution-of ?problem ?solution)
-					   (,(keywordize name)
-					     ,@ antes)))))))))))))))
-					     
 (defmacro defDifferentiation (name trigger &rest keyed-items
-			  &aux subproblems result test) ;(print `(trigger-> ,trigger))
-  (setq subproblems (cadr (member :SUBPROBLEMS keyed-items)));(print `(subproblems-> ,subproblems))
-  (setq result (cadr (member :RESULT keyed-items)));(print `(result-> ,result))
-  (setq test (cadr (member :TEST keyed-items)));(print `(test-> ,test))
+			  &aux subproblems result test) 
+  (setq subproblems (cadr (member :SUBPROBLEMS keyed-items)))
+  (setq result (cadr (member :RESULT keyed-items)))
+  (setq test (cadr (member :TEST keyed-items)))
   (unless result 
     (error "Integration operator must have result form"))
   `(rule ((:IN (expanded ((|$Differentiate| SIMP) ,trigger)) :VAR ?starter
@@ -1861,7 +1736,7 @@ Corporation is advised of the possibility of such damages.
 	     ;; If no subproblems, just create solution
      ,@ (cond ((null subproblems)
 	       `((rlet ((?solution
-			 (:EVAL (simplify ,(quotize result)))))
+			 (:EVAL (simplify-demo,(quotize result)))))
 		  (rassert! (solution-of ?problem ?solution)
 		   (,(keywordize name)
 		     (Operator-Instance ?op-instance))))))
@@ -1883,7 +1758,7 @@ Corporation is advised of the possibility of such damages.
 		      (calculate-solution-rule-parts subs subproblems)
 		    `(rule (,@ triggers)
 			   (rlet ((?solution
-				    (:EVAL (simplify ,(quotize result)))))
+				    (:EVAL (simplify-demo,(quotize result)))))
 				 (rassert! (solution-of ?problem ?solution)
 					   (,(keywordize name)
 					     ,@ antes)))))))))))))))					     
@@ -1910,8 +1785,8 @@ Corporation is advised of the possibility of such damages.
   ;; Run simplifier on subgoals, just in case.
   (cond ((null alg-goal) nil)
 	((not (listp alg-goal)) alg-goal)
-	((eq (car alg-goal) 'INTEGRAL) ;; Simplify as needed
-	 `(INTEGRAL (:EVAL (SIMPLIFY ,(quotize (cadr alg-goal))))
+	((eq (car alg-goal) 'INTEGRAL) ;; simplify-demoas needed
+	 `(INTEGRAL (:EVAL (simplify-demo,(quotize (cadr alg-goal))))
 	   ,(caddr alg-goal)))
 	(t (cons (simplifying-form-of (car alg-goal))
 		 (simplifying-form-of (cdr alg-goal))))))
@@ -1936,80 +1811,207 @@ Corporation is advised of the possibility of such damages.
 	(t (intern (format nil "~A" stuff) 'keyword))))
 
 ;;;; Interrogatives
-
-;;; SHOW-PROBLEM highlights the assertions relevant to the given problem.
-
-(defun show-problem (level pr &optional (*jsaint* *jsaint*)
-			&aux stuff ands ors)
-  ;(print `(problem++++> ,pr))	
-  (if (equal 'try (car pr)) 
-     (if (or (equal '|$Derivative|  (caar (cadadr pr)))
-              (equal '|$Differentiate|  (caar (cadadr pr))))
-            (setf pr (cadadr pr))
-        (setf pr (cdr pr))))
-        
-        ;(print `(new--pr ,pr --->  ,(replac-to-maxima pr)))		
-  (mapcar #'displa `(,(replac-to-maxima pr))); "   DifficultyLevel="  ,(estimate-difficulty pr)))			
-  ;(format t "~%~A:: (~D)" pr (estimate-difficulty pr))
-  (with-JTRE (jsaint-jtre *jsaint*)
-  (setq stuff (fetch `(parent-of ,pr ?x ?type)))
-  (cond (stuff ;(format t "~% Parent(s): ")
-  (dolist (p stuff)
-	  (if (in? p)
-	     (progn  
-	           (if (equal 'try (car p)) 
-	              (progn (mapcar #'displa `(,(replac-to-maxima (third p)) ,(replac-to-maxima (fourth p)))))))
-	           
-	    (format t "~%    BUG: Should be in: ~A" p))))
-	(t ;(format t "~% No parents found.")
-	))
+;;;;;;;;;;;;;;;;;;;new-methods to get output in order;;;;;;;;;;;;;;
+(defun $remdups(lis) 
+  (cons '(mlist) (remove-duplicates (cdr lis) :test #'equal :from-end t )))
   
-  (cond ((setq stuff (fetch-solution pr))
-              (get-spaces 4) (princ 'Solution=) (get-spaces 2)(displa(replac-to-maxima stuff)))
-	((and (setq stuff (car (fetch `(failed ,pr))))
-	      (in? stuff)) (format t "~%  Failed."))
-	((not (equal (car pr) 'try))
-	 (format t "~%    Solved in following steps")))
-	 
-  (setq ands (fetch `(and-subgoals ,pr ?ands)))
-  (when ands (get-spaces 4)(format t "~% And subgoals:")
-	(dolist (subg (third (car ands))) 
-	       (progn  
-		(displa(replac-to-maxima (car (cdr subg)))))))
+(defun $callcollect nil
+ (let
+  ((chld (car (get-children (jsaint-problem *jsaint*)))) (ntemp nil)
+   (temp nil))
+  (declare (special temp ntemp)) ($collectchildren (jsaint-problem *jsaint*))
+  ($reverse
+   (replac-to-maxima
+    (list '(mlist) ($reverse (cons '(mlist) ntemp))
+     ($reverse (cons '(mlist) temp)))))))
 
-  (setq ors (fetch `(or-subgoals ,pr ?ors)))
-  (when ors (get-spaces 4) (format t "~%    Or subgoals:")
-	   (dolist (subg (third (car ors)))  (get-spaces 4)
-	        (displa(replac-to-maxima (cons '(mlist) (cdar (cdr subg)))))))))
+          
+(defun $collectchildren (now) (declare (special temp))
+ (cond
+  ((not (equal 'try (car now)))
+   (push `((mlist) ,now ,(fetch-solution now *jsaint*)) temp)))
+ (cond
+  ((not (equal nil now))
+   (dolist (chld (get-children now))
+    (cond
+     ((equal 'try (car chld))
+      (cond
+       ((equal (caadr chld) 'differentiation-of-different-base-power)
+        (push `((mlist) ,now ,(get-newname 'bpexpt (cdadr (cadadr chld))))
+         ntemp)
+        ($collectchildren
+         `((|$differentiate| simp)
+           ((|$derivative| simp) ,`(log ,(car (cdadr (cadadr chld))))
+            ,($getvar))))
+        ($collectchildren
+         `((|$differentiate| simp)
+           ((|$derivative| simp) ,(cadr (cdadr (cadadr chld))) ,($getvar)))))
+       ((equal (caadr chld) 'log-of-self-differentiation)
+        (push `((mlist) ,now ,(get-newname 'slflog (cdadr (cadadr chld))))
+         ntemp)
+        ($collectchildren
+         `((|$differentiate| simp)
+           ((|$derivative| simp) ,(car (cdadr (cadadr chld))) ,($getvar)))))
+       ((equal (caadr chld) 'differentiation-e)
+        (push `((mlist) ,now ,(get-newname 'diffe (cdadr (cadadr chld))))
+         ntemp)
+        ($collectchildren
+         `((|$differentiate| simp)
+           ((|$derivative| simp) ,(car (cdadr (cadadr chld))) ,($getvar)))))
+       (t
+        (cond
+         ((not (null (get-children chld)))
+          (push
+           `((mlist) ,now
+             ,(get-newname (caadr (cadadr chld)) (get-children chld)))
+           ntemp)))))))
+    ($collectchildren chld)))))
 
-(defun get-spaces(n)(loop for i from 1 to n do (princ #\Space)))
-
-;;;; Textual display of an AND/OR graph
-
-(defun $showaograph (&optional (*jsaint* *jsaint*))
-  (let* ((problems (get-problems))
-	 (depth-table (update-ao-depth-table 
-		       (jsaint-problem *jsaint*)
-		       0 (list (cons (jsaint-problem *jsaint*) 0))
-		       (list (jsaint-problem *jsaint*)))))
-    (setq depth-table
-	  (sort depth-table #'(lambda (x y) (< (cdr x) (cdr y)))))
-    (dolist (pair depth-table)
-	    (progn (terpri)(get-spaces (* 3 (cdr pair)))(princ 'Level) (princ '=) (princ (cdr pair))
-	    (show-problem (cdr pair)(car pair))))))
-
-(defun update-ao-depth-table (now depth depths path)
-  (incf depth)
-  (dolist (child (get-children now) depths)
-   (unless (member child path :TEST 'equal) ;; Yes, can loop!
-    (let ((entry (assoc child depths :TEST 'equal)))
-      (unless entry 
-	      (push (setq entry (cons child 0)) depths))
-      (when (> depth (cdr entry))
-	    (setf (cdr entry) depth)
-	    (setq depths (update-ao-depth-table
-			child depth depths (cons child path))))))))
-
+    
+(defun get-newname (arg lis)
+ (let ((ytemp nil) (ztemp nil))
+  (cond ((equal lis nil) nil) ((equal arg '+) `((mplus simp) ,@lis))
+   ((equal arg '*)  
+     (cond
+     ((and (cadr (cadadr lis)) (car (cadadr lis)))
+      `(+ (* ,(car lis) ,(cadr (cadadr lis)))
+        (* ,(car (cdadar lis)) ,(cadr lis))))))
+   ((equal arg '/) '((mtimes simp) (car lis) ((mexpt simp) (cdr lis) -1)))
+   ((equal arg 'bpexpt)
+    (setf ztemp
+     `((|$differentiate| simp)
+       ((|$derivative| simp) ,(replac-to-maxima (cadr lis)) ,($getvar))))
+    (setf ytemp
+     `((|$differentiate| simp)
+       ((|$derivative| simp) ,(replac-to-maxima `(log ,(car lis)))
+        ,($getvar))))
+    `((mtimes simp) ((mexpt simp) ,(car lis) ,(cadr lis))
+      ((mplus simp) ((mtimes simp) ((%log simp) ,(car lis)) ,ztemp)
+       ((mtimes simp) ,(cadr lis) ,ytemp))))
+   ((equal arg 'diffe)
+    (setf ztemp
+     `((|$differentiate| simp)
+       ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
+    `((mtimes simp) (exp ,(car lis)) ,ztemp))
+   ((equal arg 'slflog)
+    `((mtimes simp) (/ 1 ,(car lis))
+      ((|$differentiate| simp)
+       ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar)))))
+   ((equal arg 'cptlog)
+    (setf ytemp
+     `((|$differentiate| simp)
+       ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
+    `((mtimes simp) ,(cadr lis) ((mexpt simp) ,(car lis) (+ ,(cadr lis) -1))
+      ,ytemp))
+   ((equal arg 'sin) (setf lis (cdadar lis))
+    (setf ytemp
+     `((|$differentiate| simp)
+       ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
+    `((mtimes simp) ((%cos simp) ,(car lis)) ,ytemp))
+   ((equal arg 'cos) (setf lis (cdadar lis))
+    (setf ytemp
+     `((|$differentiate| simp)
+       ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
+    `((mtimes simp) -1 ((%sin simp) ,(car lis)) ,ytemp))
+   ((equal arg 'tan) (setf lis (cdadar lis))
+    (setf ytemp
+     `((|$differentiate| simp)
+       ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
+    `(* ((mexpt simp) ((%sec simp) ,(car lis)) 2) ,ytemp))
+   ((equal arg 'cot) (setf lis (cdadar lis))
+    (setf ytemp
+     `((|$differentiate| simp)
+       ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
+    `(* -1 ((mexpt simp) ((%csc simp) ,(car lis)) 2) ,ytemp))
+   ((equal arg 'sec) (setf lis (cdadar lis))
+    (setf ytemp
+     `((|$differentiate| simp)
+       ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
+    `(* ((%sec simp) ,(car lis)) ((%tan simp) ,(car lis)) ,ytemp))
+   ((equal arg 'csc) (setf lis (cdadar lis))
+    (setf ytemp
+     `((|$differentiate| simp)
+       ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
+    `(* -1 ((%cot simp) ,(car lis)) ((%csc simp) ,(car lis)) ,ytemp))
+   ((equal arg 'asin) (setf lis (cdadar lis))
+    (setf ytemp
+     `((|$differentiate| simp)
+       ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
+    `(*
+      (/ 1
+       ((mexpt simp) ((mplus simp) 1 (* -1 ((mexpt simp) ,(car lis) 2)))
+        ((rat simp) 1 2)))
+      ,ytemp))
+   ((equal arg 'acos) (setf lis (cdadar lis))
+    (setf ytemp
+     `((|$differentiate| simp)
+       ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
+    `(* -1
+      (/ 1
+       ((mexpt simp) ((mplus simp) 1 (* -1 ((mexpt simp) ,(car lis) 2)))
+        ((rat simp) 1 2)))
+      ,ytemp))
+   ((equal arg 'acot) (setf lis (cdadar lis))
+    (setf ytemp
+     `((|$differentiate| simp)
+       ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
+    `(* -1 (/ 1 ((mplus simp) 1 ((mexpt simp) ,(car lis) 2))) ,ytemp))
+   ((equal arg 'atan) (setf lis (cdadar lis))
+    (setf ytemp
+     `((|$differentiate| simp)
+       ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
+    `(* (/ 1 ((mplus simp) 1 ((mexpt simp) ,(car lis) 2))) ,ytemp))
+   ((equal arg 'acsc) (setf lis (cdadar lis))
+    (setf ytemp
+     `((|$differentiate| simp)
+       ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
+    `(* -1
+      (/ 1
+       (* (expt ,(car lis) 2)
+        (expt (+ 1 (/ 1 (* -1 (expt ,(car lis) 2)))) (/ 1 2))))
+      ,ytemp))
+   ((equal arg 'asec) (setf lis (cdadar lis))
+    (setf ytemp
+     `((|$differentiate| simp)
+       ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
+    `(*
+      (/ 1
+       (* (expt ,(car lis) 2)
+        (expt (+ 1 (/ 1 (* -1 (expt ,(car lis) 2)))) (/ 1 2))))
+      ,ytemp))
+   ((equal arg 'sinh) (setf lis (cdadar lis))
+    (setf ytemp
+     `((|$differentiate| simp)
+       ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
+    `((mtimes simp) ((%cosh simp) ,(car lis)) ,ytemp))
+   ((equal arg 'cosh) (setf lis (cdadar lis))
+    (setf ytemp
+     `((|$differentiate| simp)
+       ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
+    `((mtimes simp) ((%sinh simp) ,(car lis)) ,ytemp))
+   ((equal arg 'sech) (setf lis (cdadar lis))
+    (setf ytemp
+     `((|$differentiate| simp)
+       ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
+    `(* -1 ((%sec simp) ,(car lis)) ((%tan simp) ,(car lis)) ,ytemp))
+   ((equal arg 'csch) (setf lis (cdadar lis))
+    (setf ytemp
+     `((|$differentiate| simp)
+       ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
+    `(* -1 ((%coth simp) ,(car lis)) ((%csch simp) ,(car lis)) ,ytemp))
+   ((equal arg 'tanh) (setf lis (cdadar lis))
+    (setf ytemp
+     `((|$differentiate| simp)
+       ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
+    `(* ((mexpt simp) ((%sech simp) ,(car lis)) 2) ,ytemp))
+   ((equal arg 'coth) (setf lis (cdadar lis))
+    (setf ytemp
+     `((|$differentiate| simp)
+       ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
+    `(* -1 ((mexpt simp) ((%csch simp) ,(car lis)) 2) ,ytemp)))))      
+       		
+       		
+;;;;;;;;;;;;;;;;;;;;;
 (defun get-children (gp &optional (*jsaint* *jsaint*)
 			&aux children)
   (dolist (maybe-kid (fetch `(parent-of ?x ,gp ?type)
@@ -2021,7 +2023,7 @@ Corporation is advised of the possibility of such damages.
 (defun get-problems (&optional (*jsaint* *jsaint*))
   (mapcar 'cadr (fetch '(expanded ?x) (jsaint-jtre *jsaint*))))
 
-;;;; Debugging
+;;;; interface between lisp and maxima
 
 ;;Convert from maxima code to lisp code
 (defun convert-to-lisp(lis)  
@@ -2030,18 +2032,41 @@ Corporation is advised of the possibility of such damages.
          ((listp lis)         
          (cond ((equal '(mplus simp) (car lis)) (cons '+ (cdr lis)))
                ((equal '(mtimes simp) (car lis))(cons '* (cdr lis)))
-               ((equal '(mexpt simp) (car lis)) (cons 'expt (cdr lis)))
+               ((equal '(rat simp) (car lis)) (cons '/ (cdr lis)))
+               ((equal '(mexpt simp) (car lis))
+                        (cond ((equal '$%E (cadr lis))(cons 'exp (cddr lis)))
+                             (t (cons 'expt (cdr lis)))))
+
                ((equal '(%log simp) (car lis)) (cons 'log (cdr lis)))
+               ((equal '(%sin simp) (car lis)) (cons 'sin (cdr lis)))
+               ((equal '(%cos simp) (car lis)) (cons 'cos (cdr lis)))
+               ((equal '(%tan simp) (car lis)) (cons 'tan (cdr lis)))
+               ((equal '(%csc simp) (car lis)) (cons 'csc (cdr lis)))
+               ((equal '(%cot simp) (car lis)) (cons 'cot (cdr lis)))
+               ((equal '(%sec simp) (car lis)) (cons 'sec (cdr lis)))
+               ((equal '(%asin simp) (car lis)) (cons 'asin (cdr lis)))
+               ((equal '(%acos simp) (car lis)) (cons 'acos (cdr lis)))
+               ((equal '(%atan simp) (car lis)) (cons 'atan (cdr lis)))
+               ((equal '(%acot simp) (car lis)) (cons 'acot (cdr lis)))
+               ((equal '(%asec simp) (car lis)) (cons 'asec (cdr lis)))
+               ((equal '(%acsc simp) (car lis)) (cons 'acsc (cdr lis)))
+               ((equal '(%sinh simp) (car lis)) (cons 'sinh (cdr lis)))
+               ((equal '(%cosh simp) (car lis)) (cons 'cosh (cdr lis)))
+               ((equal '(%tanh simp) (car lis)) (cons 'tanh (cdr lis)))
+               ((equal '(%sech simp) (car lis)) (cons 'sech (cdr lis)))
+               ((equal '(%coth simp) (car lis)) (cons 'coth (cdr lis)))
+               ((equal '(%csch simp) (car lis)) (cons 'csch (cdr lis)))
+               (t lis)
                
                ))))  
     
-(defun replac (lis)
+(defun replac-to-lisp(lis)
  (let ((lis (convert-to-lisp lis)))
   (cond ((null lis) nil) ((atom lis) lis)
    (t
     (mapcar
      #'(lambda (x)
-        (cond ((atom x) x) (t (replac x))))
+        (cond ((atom x) x) (t (replac-to-lisp x))))
      lis)))))
 ;;;----     
 (defun lisp-to-maxima(lis) 
@@ -2051,14 +2076,34 @@ Corporation is advised of the possibility of such damages.
          (cond ((equal '+ (car lis)) (cons '(mplus simp) (cdr lis)))
                ((equal '/ (car lis)) (list '(mtimes simp) (cadr lis) `((mexpt simp) ,(caddr lis) ,(- 1))))
                ((equal '* (car lis))(cons '(mtimes simp) (cdr lis)))
+               ((equal 'exp (car lis))(append (list '(MEXPT simp) '$%E) (cdr lis)))
                ((equal 'expt (car lis))(cons '(mexpt simp) (cdr lis)))
                ((equal 'sqr (car lis))(cons '(mexpt simp) (list (cadr lis) 2)))
                ((equal 'log (car lis))(cons '(%log simp) (cdr lis)))
                ((equal 'derivative (car lis))(cons '(d simp) (cdr lis)))
+               ((equal 'car (car lis))(cons '(MTIMES SIMP) (cadr lis)))
+               ((equal 'sin (car lis))(cons '(%SIN SIMP) (list (cadr lis))))
+               ((equal 'cos (car lis))(cons '(%COS SIMP) (list (cadr lis))))
+               ((equal 'tan (car lis))(cons '(%tan SIMP) (list (cadr lis))))
+               ((equal 'sec (car lis))(cons '(%sec SIMP) (list (cadr lis))))
+               ((equal 'csc (car lis))(cons '(%csc SIMP) (list (cadr lis))))
+               ((equal 'cot (car lis))(cons '(%cot SIMP) (list (cadr lis))))
+               ((equal 'asin (car lis))(cons '(%asin SIMP) (list (cadr lis))))
+               ((equal 'acos (car lis))(cons '(%acos SIMP) (list (cadr lis))))
+               ((equal 'atan (car lis))(cons '(%atan SIMP) (list (cadr lis))))
+               ((equal 'acot (car lis))(cons '(%acot SIMP) (list (cadr lis))))
+               ((equal 'asec (car lis))(cons '(%asec SIMP) (list (cadr lis))))
+               ((equal 'acsc (car lis))(cons '(%acsc SIMP) (list (cadr lis))))
+               ((equal 'sinh (car lis))(cons '(%sinh SIMP) (list (cadr lis))))
+               ((equal 'cosh (car lis))(cons '(%cosh SIMP) (list (cadr lis))))
+               ((equal 'tanh (car lis))(cons '(%tanh SIMP) (list (cadr lis))))
+               ((equal 'csch (car lis))(cons '(%csch SIMP) (list (cadr lis))))
+               ((equal 'sech (car lis))(cons '(%sech SIMP) (list (cadr lis))))
+               ((equal 'coth (car lis))(cons '(%coth SIMP) (list (cadr lis))))
                (t lis)
                ))))  
     
-(defun replac-to-maxima (lis) ;(print lis)
+(defun replac-to-maxima (lis) 
  (let ((lis (lisp-to-maxima lis)))
   (cond ((null lis) nil) ((atom lis) lis)
    (t
@@ -2067,10 +2112,18 @@ Corporation is advised of the possibility of such damages.
         (cond ((atom x) x) (t (replac-to-maxima x))))
     lis)))))     
 
+(defvar $variable nil)
+(defvar firstproblem nil)
+(proclaim '(special $variable))
+(proclaim '(special firstproblem))
 
+(defun $getvar() $variable)
+(defun $firstproblem() firstproblem)
   
-(defun $differentiate (problem var) ;(print `(problem+> ,problem)) 
-   (setf problem (replac problem)) ;(print `(problem-> ,problem))
+(defun $differentiate (problem var) 
+   (setf firstproblem problem)
+   (setf $variable var)            
+   (setf problem (replac-to-lisp problem)) ; convert maxima-> lisp
    (replac-to-maxima ($tryjsaint `((|$Differentiate| simp) ((|$Derivative| simp) ,problem ,var)))))
 
 (defun $tryjsaint (problem &optional (title "JSAINT Test")) 
@@ -2079,11 +2132,3 @@ Corporation is advised of the possibility of such damages.
 (defun jfetch (pattern) (fetch pattern (jsaint-jtre *jsaint*)))
 
 
-(defvar problem1-d '(Differentiate (Derivative 1 x)))
-
-(defvar problem2-d '(Differentiate (Derivative (+ x 5) x)))
-
-;;;;;;;;-------------
-
-
-		 
