@@ -1,0 +1,81 @@
+
+load("diff-tms.lisp");              /* Load tms */
+/*-------------*/
+/* This short conversion method was suggested by Barton Willis.
+tree(a+b*c); => [+,[*,b,c],a] , used to remove unnecessary details. */
+
+tree(e) := if mapatom(e) then e else(cons(op(e), map('tree,args(e))))$  
+/*-------------*/
+/* Reverse of tree commands functionality, hence creats original expression out of list from tree */
+call_create_exp(lis):=block([count:0,prev:[],tt1:lis,n_tt1],prev:tt1,
+create_expr_outwards(tt1),
+while(prev#tt1) do (prev:tt1,create_expr_outwards(tt1)),tt1)$
+
+create_expr_outwards(lis):=block(  
+if(not atom(lis)) then (
+if(listp(lis) and sublist(lis,listp)=[])
+then    ( 
+ if (length(lis)>1) then (tt1:subst(apply(first(lis),rest(lis)),lis,tt1)) else (tt1:subst(lis,lis,tt1)))
+else
+   (for item in lis do
+        if(listp(item))then
+            (create_expr_outwards(item)))) else lis)$
+/*-------------*/
+/*Convert Differentiate(Derivative(a,b))-> d(a,b) */
+process(lis):=block([ttemp,temp], 
+if(not atom(lis)) then (
+if(first(lis)=Differentiate) then temp:first(rest(lis)),
+temp:delete(Differentiate,lis), 
+temp:delete(DIFFERENTIATE,temp) ,
+if(lis#temp) then temp:first(temp),  
+if(first(temp)=d) then temp:[d,first(rest(temp)),getvar()],
+temp:subst('d,Derivative,temp),
+temp:subst('d,DERIVATIVE,temp),
+if(atom(temp)) then temp
+else (map(lambda([x],if(listp(x)) then process(x) else x),temp))) else lis)$
+/*-------------*/
+/* Final processing from collected results */
+stepbystep():=block([temp,stepin,tntemp,ntemp,prev,x],
+ntemp:callcollect(),  tntemp:ntemp, 
+for item in first(ntemp) do (if(second(item)=false) then (differentiate(first(first(first(item))),getvar())),
+x:callcollect(), /* Recalculate those who were failed a successful derivative calculation earlier in first sublist*/
+for it in x[1] do tntemp[1]:reverse(append([it],reverse(tntemp[1]))),
+for it in x[2] do tntemp[2]:reverse(append([it],reverse(tntemp[2])))),
+ntemp:tntemp,
+x:sublist(first(ntemp),lambda([s],is(second(s)#false))),ntemp[1]:x,
+
+for item in last(tntemp) do (if(second(item)=false) then (differentiate(first(first(first(item))),getvar())),
+x:callcollect(), /*Recalculate those who were failed a successful derivative calculation earlier in second sublist */
+for it in x[1] do tntemp[1]:reverse(append([it],reverse(tntemp[1]))),
+for it in x[2] do tntemp[2]:reverse(append([it],reverse(tntemp[2])))),
+ntemp:tntemp,
+x:sublist(second(ntemp),lambda([s],is(second(s)#false))),   /* Remove entries with unsuccessful derivatives as those have been recalculated above  */
+ntemp[2]:x,
+ntemp:tntemp,
+ntemp[1]:remdups(ntemp[1]),         /* Remove duplicate entries  */
+ntemp[1]:use_process(ntemp[1]),    /* Convert Differentiate(Derivative(a,b))-> d(a,b)  */
+ntemp[2]:reverse(append(sublist(ntemp[1],lambda([s],(not atom(second(s))))),reverse(ntemp[2]))),
+ntemp[2]:(remdups(ntemp[2])),      /* Remove duplicate entries  */
+ntemp[2]:use_process(ntemp[2]),   /* Convert Differentiate(Derivative(a,b))-> d(a,b)  */
+temp:(ntemp[2]),    
+if(temp#[]) then (  
+stepin:second(first(temp)), print("=>",stepin),
+stepin:first(subst(rest(first(temp)),first(temp[1]),temp[1]))[1],  
+
+for i:2 while i <= length(temp) do  (                       /* Do substituion from second list(having semi-processed expressions) into expression */
+  for j:i while j<=length(temp) do (   prev:stepin, 
+            stepin:subst(first(rest(temp[j])),first(temp[j]),(stepin)),
+if(prev#stepin) then print("=>",stepin))),
+for item in first(ntemp) do ( prev:stepin,                 /* Do substituion from first list(having atoms as results) into expression */
+     stepin:subst(second(item),first(item),stepin),
+if(prev#stepin) then print("=>",stepin) 
+)))$
+/*-------------*/
+/* Apply process() on required lists */
+use_process(lis):=block([temp:[]],
+for item in lis do  (  
+if(second(item)#false) then 
+    temp:reverse(append([[call_create_exp(process(tree(item[1]))),call_create_exp(process(tree(item[2])))]],reverse(temp)))),temp)$
+/*-------------*/
+/*Interface to the user */
+diff_steps(prob,var):=block(differentiate(prob,var),stepbystep())$
