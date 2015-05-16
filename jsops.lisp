@@ -86,7 +86,6 @@
   ((|$Derivative| SIMP) (expt ?v ?n) ?var)     ;;;(expt ?v ?n)*?n * log(?v)
   :SUBPROBLEMS ((?int1 ((|$Differentiate| SIMP)  ((|$Derivative| SIMP) (:EVAL `(log ,?v)) ?var)))
                 (?int2 ((|$Differentiate| SIMP)  ((|$Derivative| SIMP) ?n ?var))))
-;  :RESULT (* (log ?v) ?int2 ) )						;(+ (* ?int1 ?n) (* (log ?v) ?int2 )))
    :RESULT (* (expt ?v ?n) (+ (* ?int1 ?n) (* (log ?v) ?int2 ))))          
 
   
@@ -220,17 +219,3 @@
   ((|$Derivative| SIMP) (csch ?a) ?var)
   :SUBPROBLEMS ((?int1 ((|$Differentiate| SIMP) ((|$Derivative| SIMP) ?a ?var))))		
   :RESULT (* -1 (csch ?a) (coth ?a) ?int1))     
-  
-     
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-         
-  
