@@ -1,12 +1,10 @@
 
-load("diff-tms.lisp");              /* Load tms */
-/*-------------*/
-/* This short conversion method was suggested by Barton Willis.
-tree(a+b*c); => [+,[*,b,c],a] , used to remove unnecessary details. */
+load("nm-code-1.lisp");
 
-tree(e) := if mapatom(e) then e else(cons(op(e), map('tree,args(e))))$  
-/*-------------*/
-/* Reverse of tree commands functionality, hence creats original expression out of list from tree */
+tree(e) := if mapatom(e) then e else(cons(op(e), map('tree,args(e))))$
+
+tree_rev(e) := if mapatom(e) then apply(op(e), map('tree_rev,args(e))) else e$
+
 call_create_exp(lis):=block([count:0,prev:[],tt1:lis,n_tt1],prev:tt1,
 create_expr_outwards(tt1),
 while(prev#tt1) do (prev:tt1,create_expr_outwards(tt1)),tt1)$
@@ -20,8 +18,7 @@ else
    (for item in lis do
         if(listp(item))then
             (create_expr_outwards(item)))) else lis)$
-/*-------------*/
-/*Convert Differentiate(Derivative(a,b))-> d(a,b) */
+
 process(lis):=block([ttemp,temp], 
 if(not atom(lis)) then (
 if(first(lis)=Differentiate) then temp:first(rest(lis)),
@@ -33,8 +30,7 @@ temp:subst('d,Derivative,temp),
 temp:subst('d,DERIVATIVE,temp),
 if(atom(temp)) then temp
 else (map(lambda([x],if(listp(x)) then process(x) else x),temp))) else lis)$
-/*-------------*/
-/* Final processing from collected results */
+
 stepbystep():=block([temp,stepin,tntemp,ntemp,prev,x],
 ntemp:callcollect(),  tntemp:ntemp, 
 for item in first(ntemp) do (if(second(item)=false) then (differentiate(first(first(first(item))),getvar())),
@@ -70,12 +66,10 @@ for item in first(ntemp) do ( prev:stepin,                 /* Do substituion fro
      stepin:subst(second(item),first(item),stepin),
 if(prev#stepin) then print("=>",stepin) 
 )))$
-/*-------------*/
-/* Apply process() on required lists */
+
 use_process(lis):=block([temp:[]],
 for item in lis do  (  
 if(second(item)#false) then 
     temp:reverse(append([[call_create_exp(process(tree(item[1]))),call_create_exp(process(tree(item[2])))]],reverse(temp)))),temp)$
-/*-------------*/
-/*Interface to the user */
+
 diff_steps(prob,var):=block(differentiate(prob,var),stepbystep())$
