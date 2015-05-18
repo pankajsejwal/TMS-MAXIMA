@@ -4,12 +4,25 @@ Maxima compatible TMS code for step by step computation
 I have been trying to learn about Truth Maintenance Systems and there are good explanations in "Building problem solvers". There is information available for all kinds of TMS. They have recreated SAINT integration program using TMS and they have also shown steps involved in reaching to logical conclusions from start to finish of the solution.
 
 I have made changes to program to make it suitable for differentiation, used Maxima as front end and it is working fine.
+How to use=>
 
-You will need to add the path to the project to Maxima's internal paths as follows. For examplem
+Method 1:
+You will need to add the path to the project to Maxima's internal paths as follows. For example
 
     /* Add the project location to Maxima's search path */
     file_search_maxima:append( [sconcat("/home/joker/Project Space/BPS/jtms/###.{mac,mc}")] , file_search_maxima)$
     file_search_lisp:append( [sconcat("/home/joker/Project Space/BPS/jtms/###.{lisp}")] , file_search_lisp)$
+
+Method 2: In case you find problem in loading files with the method mentioned above, update respective paths, for example,
+Let "/home/pmce/Downloads/TMS-MAXIMA-master" is the folder where you have your downloaded files,
+
+1. Update paths in nm-code-1.lisp to
+(defvar *jsaint-rules*  "/home/pmce/Downloads/TMS-MAXIMA-master/jsrules.lisp")
+(defvar *jsaint-operators*  "/home/pmce/Downloads/TMS-MAXIMA-master/jsops.lisp")
+2. Update path in difftms.mac for loading nm-code-1.lisp,
+load("nm-code-1.lisp"); to load("/home/pmce/Downloads/TMS-MAXIMA-master/nm-code-1.lisp")
+
+I am referring to this explicitly because I am facing problem with loading jsrules.lisp and jsops.lisp while nm-code-1.lisp gets loaded. Reason, I don't know and needs more investigation.
 
 To use the code, for example try
 
