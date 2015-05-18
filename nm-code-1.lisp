@@ -21,7 +21,7 @@ differentiation, in case of queries, please mail to pankajsejwal@gmail.com
 
 ;;; Justification-based Truth Maintenence System (JTMS)
 
-;(in-package :COMMON-LISP-USER)
+
 
 (defstruct (jtms (:PRINT-FUNCTION print-jtms))
   (title nil)					
@@ -410,7 +410,7 @@ differentiation, in case of queries, please mail to pankajsejwal@gmail.com
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; JTRE definitions  : jinter.lisp
 
-;(in-package :COMMON-LISP-USER) 
+ 
 
 (defstruct (jtre (:PRINT-FUNCTION jtre-printer))
   title                   ; Pretty name
@@ -481,7 +481,7 @@ differentiation, in case of queries, please mail to pankajsejwal@gmail.com
 
 ;;;; Database for Tiny Rule Engine using JTMS
 
-;(in-package :COMMON-LISP-USER)
+
 
 ;;;; Database structure and contents
 
@@ -732,7 +732,7 @@ differentiation, in case of queries, please mail to pankajsejwal@gmail.com
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;; This file is jrules.lisp
 
-;(in-package :COMMON-LISP-USER)
+
 
 (proclaim '(special *JTRE* *bound-vars* *rule-procedures*))
 
@@ -977,7 +977,7 @@ differentiation, in case of queries, please mail to pankajsejwal@gmail.com
 
 ;;;; Variables and unification
 
-;(in-package :COMMON-LISP-USER)
+
 
 (defun variable? (x)
   (and (symbolp x)	;A symbol whose first character is "?"
@@ -1018,7 +1018,7 @@ differentiation, in case of queries, please mail to pankajsejwal@gmail.com
 
 ;;; Extra pattern-matching facilities for FTRE
 
-;(in-package :COMMON-LISP-USER)
+
 
 (proclaim '(special *bound-vars*))
 
@@ -1140,7 +1140,7 @@ differentiation, in case of queries, please mail to pankajsejwal@gmail.com
 
 ;;;; Simple shakedown procedure for JTRE 
 
-;(in-package :COMMON-LISP-USER)
+
 
 (defun shakedown-jtre ()
   (in-jtre (create-jtre "Test One"))
@@ -1231,7 +1231,7 @@ differentiation, in case of queries, please mail to pankajsejwal@gmail.com
 
 ;;;; Algebraic simplifier
 
-;(in-package :COMMON-LISP-USER)
+
 
 ;;; This version is inspired by one of G.J. Sussman's scheme matchers.
 
@@ -1393,7 +1393,7 @@ differentiation, in case of queries, please mail to pankajsejwal@gmail.com
 
 ;;;; Pattern matcher for algebraic manipulation systems
 
-;(in-package :COMMON-LISP-USER)
+
 
 ;;; There are two kinds of variables.
 ;;; Element variables match a single element of a list.
@@ -1532,7 +1532,7 @@ differentiation, in case of queries, please mail to pankajsejwal@gmail.com
 
 ;;;; JSAINT: A rational reconstruction of Slagel's SAINT program
 
-;(in-package :COMMON-LISP-USER)
+
 
 (defstruct (Jsaint 
 		   (:PRINT-FUNCTION (lambda (a st ignore)
@@ -1582,8 +1582,8 @@ differentiation, in case of queries, please mail to pankajsejwal@gmail.com
 
 ;;;; User entry point
 
-(defvar *jsaint-rules*  "/home/pmce/Downloads/jsrules.lisp")
-(defvar *jsaint-operators*  "/home/pmce/Downloads/jsops.lisp")
+(defvar *jsaint-rules*  "/home/pmce/Downloads/diff-tms/jsrules.lisp")
+(defvar *jsaint-operators*  "/home/pmce/Downloads/diff-tms/jsops.lisp")
 
 
 (defun solve-integral (integral
@@ -1871,12 +1871,15 @@ differentiation, in case of queries, please mail to pankajsejwal@gmail.com
 (defun get-newname (arg lis)
  (let ((ytemp nil) (ztemp nil))
   (cond ((equal lis nil) nil) ((equal arg '+) `((mplus simp) ,@lis))
+   
    ((equal arg '*)  
      (cond
      ((and (cadr (cadadr lis)) (car (cadadr lis)))
       `(+ (* ,(car lis) ,(cadr (cadadr lis)))
         (* ,(car (cdadar lis)) ,(cadr lis))))))
-   ((equal arg '/) '((mtimes simp) (car lis) ((mexpt simp) (cdr lis) -1)))
+   
+   ((equal arg '/) '(* (car lis) (expt (cdr lis) -1)))
+   
    ((equal arg 'bpexpt)
     (setf ztemp
      `((|$differentiate| simp)
@@ -1885,82 +1888,95 @@ differentiation, in case of queries, please mail to pankajsejwal@gmail.com
      `((|$differentiate| simp)
        ((|$derivative| simp) ,(replac-to-maxima `(log ,(car lis)))
         ,($getvar))))
-    `((mtimes simp) ((mexpt simp) ,(car lis) ,(cadr lis))
-      ((mplus simp) ((mtimes simp) ((%log simp) ,(car lis)) ,ztemp)
-       ((mtimes simp) ,(cadr lis) ,ytemp))))
+    `(* (expt ,(car lis) ,(cadr lis))
+      (+ (* ((%log simp) ,(car lis)) ,ztemp)
+       (* ,(cadr lis) ,ytemp))))
+   
    ((equal arg 'diffe)
     (setf ztemp
      `((|$differentiate| simp)
        ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
-    `((mtimes simp) (exp ,(car lis)) ,ztemp))
+    `(* (exp ,(car lis)) ,ztemp))
+   
    ((equal arg 'slflog)
-    `((mtimes simp) (/ 1 ,(car lis))
+    `(* (/ 1 ,(car lis))
       ((|$differentiate| simp)
        ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar)))))
+   
    ((equal arg 'cptlog)
     (setf ytemp
      `((|$differentiate| simp)
        ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
-    `((mtimes simp) ,(cadr lis) ((mexpt simp) ,(car lis) (+ ,(cadr lis) -1))
+    `(* ,(cadr lis) (expt ,(car lis) (+ ,(cadr lis) -1))
       ,ytemp))
+      
    ((equal arg 'sin) (setf lis (cdadar lis))
     (setf ytemp
      `((|$differentiate| simp)
        ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
-    `((mtimes simp) ((%cos simp) ,(car lis)) ,ytemp))
+    `(* ((%cos simp) ,(car lis)) ,ytemp))
+   
    ((equal arg 'cos) (setf lis (cdadar lis))
     (setf ytemp
      `((|$differentiate| simp)
        ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
-    `((mtimes simp) -1 ((%sin simp) ,(car lis)) ,ytemp))
+    `(* -1 ((%sin simp) ,(car lis)) ,ytemp))
+   
    ((equal arg 'tan) (setf lis (cdadar lis))
     (setf ytemp
      `((|$differentiate| simp)
        ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
-    `(* ((mexpt simp) ((%sec simp) ,(car lis)) 2) ,ytemp))
+    `(* (expt ((%sec simp) ,(car lis)) 2) ,ytemp))
    ((equal arg 'cot) (setf lis (cdadar lis))
     (setf ytemp
      `((|$differentiate| simp)
        ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
-    `(* -1 ((mexpt simp) ((%csc simp) ,(car lis)) 2) ,ytemp))
+    `(* -1 (expt ((%csc simp) ,(car lis)) 2) ,ytemp))
+   
    ((equal arg 'sec) (setf lis (cdadar lis))
     (setf ytemp
      `((|$differentiate| simp)
        ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
     `(* ((%sec simp) ,(car lis)) ((%tan simp) ,(car lis)) ,ytemp))
+   
    ((equal arg 'csc) (setf lis (cdadar lis))
     (setf ytemp
      `((|$differentiate| simp)
        ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
     `(* -1 ((%cot simp) ,(car lis)) ((%csc simp) ,(car lis)) ,ytemp))
+   
    ((equal arg 'asin) (setf lis (cdadar lis))
     (setf ytemp
      `((|$differentiate| simp)
        ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
     `(*
       (/ 1
-       ((mexpt simp) ((mplus simp) 1 (* -1 ((mexpt simp) ,(car lis) 2)))
+       (expt (+ 1 (* -1 (expt ,(car lis) 2)))
         ((rat simp) 1 2)))
       ,ytemp))
+   
    ((equal arg 'acos) (setf lis (cdadar lis))
     (setf ytemp
      `((|$differentiate| simp)
        ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
     `(* -1
       (/ 1
-       ((mexpt simp) ((mplus simp) 1 (* -1 ((mexpt simp) ,(car lis) 2)))
+       (expt (+ 1 (* -1 (expt ,(car lis) 2)))
         ((rat simp) 1 2)))
       ,ytemp))
+   
    ((equal arg 'acot) (setf lis (cdadar lis))
     (setf ytemp
      `((|$differentiate| simp)
        ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
-    `(* -1 (/ 1 ((mplus simp) 1 ((mexpt simp) ,(car lis) 2))) ,ytemp))
+    `(* -1 (/ 1 (+ 1 (expt ,(car lis) 2))) ,ytemp))
+   
    ((equal arg 'atan) (setf lis (cdadar lis))
     (setf ytemp
      `((|$differentiate| simp)
        ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
-    `(* (/ 1 ((mplus simp) 1 ((mexpt simp) ,(car lis) 2))) ,ytemp))
+    `(* (/ 1 (+ 1 (expt ,(car lis) 2))) ,ytemp))
+   
    ((equal arg 'acsc) (setf lis (cdadar lis))
     (setf ytemp
      `((|$differentiate| simp)
@@ -1970,6 +1986,7 @@ differentiation, in case of queries, please mail to pankajsejwal@gmail.com
        (* (expt ,(car lis) 2)
         (expt (+ 1 (/ 1 (* -1 (expt ,(car lis) 2)))) (/ 1 2))))
       ,ytemp))
+   
    ((equal arg 'asec) (setf lis (cdadar lis))
     (setf ytemp
      `((|$differentiate| simp)
@@ -1979,36 +1996,42 @@ differentiation, in case of queries, please mail to pankajsejwal@gmail.com
        (* (expt ,(car lis) 2)
         (expt (+ 1 (/ 1 (* -1 (expt ,(car lis) 2)))) (/ 1 2))))
       ,ytemp))
+   
    ((equal arg 'sinh) (setf lis (cdadar lis))
     (setf ytemp
      `((|$differentiate| simp)
        ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
-    `((mtimes simp) ((%cosh simp) ,(car lis)) ,ytemp))
+    `(* (cosh ,(car lis)) ,ytemp))
+   
    ((equal arg 'cosh) (setf lis (cdadar lis))
     (setf ytemp
      `((|$differentiate| simp)
        ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
-    `((mtimes simp) ((%sinh simp) ,(car lis)) ,ytemp))
+    `(* (sin ,(car lis)) ,ytemp))
+   
    ((equal arg 'sech) (setf lis (cdadar lis))
     (setf ytemp
      `((|$differentiate| simp)
        ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
-    `(* -1 ((%sec simp) ,(car lis)) ((%tan simp) ,(car lis)) ,ytemp))
+    `(* -1 (sech ,(car lis)) (tanh ,(car lis)) ,ytemp))
+    
    ((equal arg 'csch) (setf lis (cdadar lis))
     (setf ytemp
      `((|$differentiate| simp)
        ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
-    `(* -1 ((%coth simp) ,(car lis)) ((%csch simp) ,(car lis)) ,ytemp))
+    `(* -1 (coth ,(car lis)) (csch ,(car lis)) ,ytemp))
+    
    ((equal arg 'tanh) (setf lis (cdadar lis))
     (setf ytemp
      `((|$differentiate| simp)
        ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
-    `(* ((mexpt simp) ((%sech simp) ,(car lis)) 2) ,ytemp))
+    `(* (expt (sech ,(car lis)) 2) ,ytemp))
+    
    ((equal arg 'coth) (setf lis (cdadar lis))
     (setf ytemp
      `((|$differentiate| simp)
        ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
-    `(* -1 ((mexpt simp) ((%csch simp) ,(car lis)) 2) ,ytemp)))))      
+    `(* -1 (expt (csch ,(car lis)) 2) ,ytemp)))))      
        		
        		
 ;;;;;;;;;;;;;;;;;;;;;
