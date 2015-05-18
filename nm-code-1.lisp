@@ -1884,12 +1884,13 @@ differentiation, in case of queries, please mail to pankajsejwal@gmail.com
     (setf ztemp
      `((|$differentiate| simp)
        ((|$derivative| simp) ,(replac-to-maxima (cadr lis)) ,($getvar))))
+       
     (setf ytemp
      `((|$differentiate| simp)
        ((|$derivative| simp) ,(replac-to-maxima `(log ,(car lis)))
         ,($getvar))))
     `(* (expt ,(car lis) ,(cadr lis))
-      (+ (* ((%log simp) ,(car lis)) ,ztemp)
+      (+ (* (log ,(car lis)) ,ztemp)
        (* ,(cadr lis) ,ytemp))))
    
    ((equal arg 'diffe)
@@ -1914,36 +1915,37 @@ differentiation, in case of queries, please mail to pankajsejwal@gmail.com
     (setf ytemp
      `((|$differentiate| simp)
        ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
-    `(* ((%cos simp) ,(car lis)) ,ytemp))
+    `(* (cos ,(car lis)) ,ytemp))
    
    ((equal arg 'cos) (setf lis (cdadar lis))
     (setf ytemp
      `((|$differentiate| simp)
        ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
-    `(* -1 ((%sin simp) ,(car lis)) ,ytemp))
+    `(* -1 (sin ,(car lis)) ,ytemp))
    
    ((equal arg 'tan) (setf lis (cdadar lis))
     (setf ytemp
      `((|$differentiate| simp)
        ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
-    `(* (expt ((%sec simp) ,(car lis)) 2) ,ytemp))
+    `(* (expt (sec ,(car lis)) 2) ,ytemp))
+  
    ((equal arg 'cot) (setf lis (cdadar lis))
     (setf ytemp
      `((|$differentiate| simp)
        ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
-    `(* -1 (expt ((%csc simp) ,(car lis)) 2) ,ytemp))
+    `(* -1 (expt (csc ,(car lis)) 2) ,ytemp))
    
    ((equal arg 'sec) (setf lis (cdadar lis))
     (setf ytemp
      `((|$differentiate| simp)
        ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
-    `(* ((%sec simp) ,(car lis)) ((%tan simp) ,(car lis)) ,ytemp))
+    `(* (sec ,(car lis)) (tan ,(car lis)) ,ytemp))
    
    ((equal arg 'csc) (setf lis (cdadar lis))
     (setf ytemp
      `((|$differentiate| simp)
        ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
-    `(* -1 ((%cot simp) ,(car lis)) ((%csc simp) ,(car lis)) ,ytemp))
+    `(* -1 (cot ,(car lis)) (csc ,(car lis)) ,ytemp))
    
    ((equal arg 'asin) (setf lis (cdadar lis))
     (setf ytemp
@@ -2007,7 +2009,7 @@ differentiation, in case of queries, please mail to pankajsejwal@gmail.com
     (setf ytemp
      `((|$differentiate| simp)
        ((|$derivative| simp) ,(replac-to-maxima (car lis)) ,($getvar))))
-    `(* (sin ,(car lis)) ,ytemp))
+    `(* (sinh ,(car lis)) ,ytemp))
    
    ((equal arg 'sech) (setf lis (cdadar lis))
     (setf ytemp
