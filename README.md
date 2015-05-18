@@ -46,9 +46,13 @@ To use the code, for example try
     =>sinh(x)/sqrt(1-x^2)+x^2*(d(2,x)*log(x)+2/x)+asin(x)*cosh(x)
     =>sinh(x)/sqrt(1-x^2)+asin(x)*cosh(x)+2*x
     
+    For solution to long and complex problems, refer to
+    https://www.academia.edu/12436154/Step-by-Step_Differentiation_on_Maxima_CAS
 
 Possible improvements:
+
 1) Also mentioning which rule has been implemented, but for now it has been left as excercise for student.
+
 2) Using TMS to solve Integration, Limits and Simplification because they all require pattern matching.
 
 There are no known bugs and output is always same as Maxima's "diff" command. It includes all algebraic, trignometric, hyperbolic functions. Please try as many problems as you can andin case of errors please report it to me at pankajsejwal@gmail.com
